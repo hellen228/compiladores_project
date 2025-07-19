@@ -95,7 +95,7 @@ class SingletonLexicalAnalyzer:
         for token_type, count in stats.items():
             print(f" {token_type}: {count}")
 
-class SyntaxAnalyzer:
+class SingletonSyntaxAnalyzer:
     """Analizador sintáctico que construye el AST y detecta relaciones entre clases"""
     
     def __init__(self):
@@ -505,11 +505,7 @@ class SyntaxAnalyzer:
         
         print(f"Relaciones encontradas: {len(self.relations)}")
 
-# =============================================================================
-# FASE 3: ANÁLISIS SEMÁNTICO
-# =============================================================================
-
-class SemanticAnalyzer:
+class SingletonSemanticAnalyzer:
     """Analizador semántico que identifica patrones Singleton"""
     
     def __init__(self):
