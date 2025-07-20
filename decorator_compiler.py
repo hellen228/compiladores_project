@@ -3,10 +3,12 @@ import sys
 import os
 import re
 import subprocess
-from typing import List, Dict, Any, Optional, Tuple
-from dataclasses import dataclass, field
+from typing import List, Dict, Any, Tuple
+from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
+from data_structure import ASTNode, ClassRelation, RelationType, IntermediateRepresentation
+from data_structure import OptimizedData, PatternInfo
 
 # =============================================================================
 # DEFINICIÓN DE ESTRUCTURAS DE DATOS
@@ -22,13 +24,6 @@ class TokenType(Enum):
     ARGS_KWARGS = "args_kwargs"
     CLASS_DEF = "class_definition"
 
-class RelationType(Enum):
-    INHERITANCE = "inheritance"
-    COMPOSITION = "composition"
-    ASSOCIATION = "association"
-    DEPENDENCY = "dependency"
-    DECORATOR = "decorator"
-
 @dataclass
 class Token:
     type: TokenType
@@ -36,45 +31,6 @@ class Token:
     line: int
     column: int
     confidence: float = 1.0
-
-@dataclass
-class ClassRelation:
-    source: str
-    target: str
-    relation_type: RelationType
-    description: str
-    line: int
-    confidence: float = 1.0
-
-@dataclass
-class ASTNode:
-    node_type: str
-    name: str
-    line: int
-    children: List['ASTNode'] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-@dataclass
-class PatternInfo:
-    class_name: str
-    pattern_type: str
-    confidence: float
-    evidences: Dict[str, Any]
-    violations: List[str] = field(default_factory=list)
-
-@dataclass
-class IntermediateCode:
-    classes: Dict[str, Dict[str, Any]]
-    patterns: Dict[str, PatternInfo]
-    relations: List[ClassRelation]
-    metadata: Dict[str, Any]
-
-@dataclass
-class OptimizedResult:
-    patterns: Dict[str, PatternInfo]
-    relations: List[ClassRelation]
-    removed_false_positives: List[str]
-    confidence_updates: Dict[str, float]
 
 # =============================================================================
 # FASE 1: ANALIZADOR LÉXICO
@@ -641,7 +597,7 @@ class IntermediateCodeGenerator:
         self.ir = None
     
     def generate(self, ast_nodes: List[ASTNode], patterns: Dict[str, PatternInfo], 
-                relations: List[ClassRelation]) -> IntermediateCode:
+                relations: List[ClassRelation]) -> IntermediateRepresentation:
         print("Generando código intermedio...")
         
         classes = {}
@@ -670,11 +626,11 @@ class IntermediateCodeGenerator:
             'timestamp': datetime.now().isoformat()
         }
         
-        self.ir = IntermediateCode(
+        self.ir = IntermediateRepresentation(
             classes=classes,
             patterns=patterns,
             relations=filtered_relations,
-            metadata=metadata
+            global_metadata=metadata
         )
         
         print(f"Elementos procesados: {len(classes)}")
@@ -726,12 +682,12 @@ class Optimizer:
     def __init__(self):
         self.optimized_data = None
     
-    def optimize(self, ir: IntermediateCode) -> OptimizedResult:
+    def optimize(self, ir: IntermediateRepresentation) -> OptimizedData:
         print("Optimizando resultados...")
         
         optimized_patterns = {}
         false_positives = []
-        confidence_updates = {}
+        confidence_adjustments = {}
         
         for name, pattern_info in ir.patterns.items():
             optimized_pattern = self._optimize_pattern(pattern_info, ir.classes[name], ir.relations)
@@ -747,17 +703,17 @@ class Optimizer:
             original_confidence = pattern_info.confidence
             adjustment = optimized_pattern.confidence - original_confidence
             if abs(adjustment) > 0.05:
-                confidence_updates[name] = adjustment
+                confidence_adjustments[name] = adjustment
             
             optimized_patterns[name] = optimized_pattern
         
         optimized_relations = self._optimize_relations(ir.relations, optimized_patterns)
         
-        self.optimized_data = OptimizedResult(
+        self.optimized_data = OptimizedData(
             patterns=optimized_patterns,
             relations=optimized_relations,
-            removed_false_positives=false_positives,
-            confidence_updates=confidence_updates
+            false_positives_removed=false_positives,
+            confidence_adjustments=confidence_adjustments
         )
         
         print(f"Falsos positivos removidos: {len(false_positives)}")
@@ -846,7 +802,7 @@ class UMLGenerator:
             RelationType.DECORATOR: "..>"
         }
     
-    def generate(self, optimized_data: OptimizedResult, ir_data: IntermediateCode = None) -> str:
+    def generate(self, optimized_data: OptimizedData, ir_data: IntermediateRepresentation = None) -> str:
         print("Generando código UML...")
         
         self._ir_data = ir_data
@@ -876,7 +832,7 @@ class UMLGenerator:
             uml_content += self._clients_section(decorator_clients)
         
         # Sección de falsos positivos
-        real_false_positives = [fp for fp in optimized_data.removed_false_positives
+        real_false_positives = [fp for fp in optimized_data.false_positives_removed
                               if not any(p.class_name == fp and p.pattern_type == "decorator_client" 
                                        for p in optimized_data.patterns.values())]
         if real_false_positives:
@@ -1203,33 +1159,33 @@ class DecoratorCompiler:
 # PROGRAMA PRINCIPAL
 # =============================================================================
 
-def main():
-    if len(sys.argv) != 3:
-        print("Uso: python3 decorator_compiler.py codigo.py diagrama.puml")
-        print()
-        print("Patrones detectados:")
-        print("  - object_decorator: Decorador de objeto completo")
-        print("  - incomplete_object_decorator: Decorador de objeto incompleto")
-        print("  - basic_function_decorator: Decorador de función básico")
-        print("  - advanced_function_decorator: Decorador con functools")
-        print("  - incomplete_function_decorator: Decorador de función incompleto")
-        print("  - decorator_client: Cliente que usa decorators")
-        sys.exit(1)
-    
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
-    
-    if not os.path.exists(input_file):
-        print(f"ERROR: El archivo {input_file} no existe")
-        sys.exit(1)
-    
-    if not output_file.endswith('.puml'):
-        print("RECOMENDACIÓN: Use extensión .puml para el archivo de salida")
-    
-    compiler = DecoratorCompiler()
-    success = compiler.compile(input_file, output_file)
-    
-    sys.exit(0 if success else 1)
-
-if __name__ == "__main__":
-    main()
+#def main():
+#    if len(sys.argv) != 3:
+#        print("Uso: python3 decorator_compiler.py codigo.py diagrama.puml")
+#        print()
+#        print("Patrones detectados:")
+#        print("  - object_decorator: Decorador de objeto completo")
+#        print("  - incomplete_object_decorator: Decorador de objeto incompleto")
+#        print("  - basic_function_decorator: Decorador de función básico")
+#        print("  - advanced_function_decorator: Decorador con functools")
+#        print("  - incomplete_function_decorator: Decorador de función incompleto")
+#        print("  - decorator_client: Cliente que usa decorators")
+#        sys.exit(1)
+#    
+#    input_file = sys.argv[1]
+#    output_file = sys.argv[2]
+#    
+#    if not os.path.exists(input_file):
+#        print(f"ERROR: El archivo {input_file} no existe")
+#        sys.exit(1)
+#    
+#    if not output_file.endswith('.puml'):
+#        print("RECOMENDACIÓN: Use extensión .puml para el archivo de salida")
+#    
+#    compiler = DecoratorCompiler()
+#    success = compiler.compile(input_file, output_file)
+#    
+#    sys.exit(0 if success else 1)
+#
+#if __name__ == "__main__":
+#    main()
