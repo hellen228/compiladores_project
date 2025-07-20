@@ -1,8 +1,10 @@
 import sys
 import os
 from plantuml import PlantUML
-from singleton_compiler import SingletonCompiler
-from decorator_compiler import DecoratorCompiler
+from patterns.singleton_compiler import SingletonCompiler
+from patterns.decorator_compiler import DecoratorCompiler
+from patterns.observer_compiler import ObserverCompiler
+from patterns.factory_method_compiler import FactoryMethodCompiler
 
 def main():
     """Función principal del programa"""
@@ -15,15 +17,17 @@ def main():
         input_file = input("Ingrese el nombre del archivo de entrada (.py): ")
         output_file = input("Ingrese el nombre del archivo de salida (.puml): ")
 
-    print(f"Archivo a compilar: {input_file}")
-    print(f"Archivo de salida: {output_file}")
+    #print(f"Archivo a compilar: {input_file}")
+    #print(f"Archivo de salida: {output_file}")
 
     if not os.path.exists(input_file):
         print(f"ERROR: El archivo '{input_file}' no existe.")
         sys.exit(1)
 
     compiler = SingletonCompiler()
-    #compiler = DecoratorCompiler()
+    compiler = DecoratorCompiler()
+    compiler = ObserverCompiler()
+    compiler = FactoryMethodCompiler()
     success = compiler.compile(input_file, output_file)
 
     #compiler2 = DecoratorCompiler()
@@ -32,7 +36,6 @@ def main():
     if not output_file.endswith('.puml'):
         print("RECOMENDACIÓN: Use extensión '.puml' para el archivo de salida.")
 
-    # Generar imagen PlantUML
     plantuml = PlantUML(url='http://www.plantuml.com/plantuml/img/') 
     plantuml.processes_file(output_file)
 

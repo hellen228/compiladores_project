@@ -8,6 +8,7 @@ class RelationType(Enum):
     ASSOCIATION = "association"
     DEPENDENCY = "dependency"
     DECORATOR = "decorator"
+    OBSERVER = "observer"
 
 @dataclass
 class ClassRelation:
@@ -27,16 +28,7 @@ class ASTNode:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
-class SemanticInfo:    #SINGLETON
-    class_name: str
-    pattern_type: str
-    confidence: float
-    evidences: Dict[str, Any]
-    violations: List[str] = field(default_factory=list)
-
-
-@dataclass
-class PatternInfo:     #DECORATOR
+class SemanticInfo:    
     class_name: str
     pattern_type: str
     confidence: float
