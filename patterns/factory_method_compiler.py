@@ -1,9 +1,9 @@
-from enum import Enum
-from dataclasses import dataclass
-from typing import List, Dict, Tuple, Any
 import re
 import ast
 import subprocess
+from enum import Enum
+from dataclasses import dataclass
+from typing import List, Dict, Tuple, Any
 from datetime import datetime
 from data_structure import RelationType, ClassRelation, ASTNode, SemanticInfo
 from data_structure import OptimizedData, IntermediateRepresentation
@@ -40,31 +40,56 @@ class LexicalAnalyzer:
             TokenType.FACTORY_METHOD: [
                 r'factory_method\b', r'create_\w+\b', r'make_\w+\b', 
                 r'build_\w+\b', r'get_\w+\b', r'new_\w+\b',
-                r'create\b', r'make\b', r'build\b', r'factory\b'
+                r'create\b', r'make\b', r'build\b', r'factory\b',
+
+                r'crear_\w+\b', r'hacer_\w+\b', r'construir_\w+\b',
+                r'obtener_\w+\b', r'nuevo_\w+\b', r'fabrica\b',
+                r'crear\b', r'hacer\b', r'construir\b', r'obtener\b',
+                
+                # Patrones más generales para métodos factory
+                r'def\s+\w*crear\w*\b', r'def\s+\w*create\w*\b',
+                r'def\s+\w*make\w*\b', r'def\s+\w*build\w*\b'
             ],
             TokenType.FACTORY_CLASS: [
                 r'\w*Factory\b', r'\w*Creator\b', r'\w*Builder\b',
-                r'\w*Maker\b', r'Abstract\w+\b', r'Base\w+\b'
+                r'\w*Maker\b', r'Abstract\w+\b', r'Base\w+\b',
+
+                r'\w*Fabrica\b', r'\w*Factory\b', r'\w*Creador\b',
+                r'\w*Constructor\b', r'\w*Fabricante\b',
+                r'Abstracto\w+\b', r'Base\w+\b'
             ],
             TokenType.CREATOR_METHOD: [
                 r'@abstractmethod\b', r'@abc\.abstractmethod\b',
                 r'def\s+create\w*\b', r'def\s+make\w*\b',
-                r'def\s+build\w*\b', r'def\s+factory\w*\b'
+                r'def\s+build\w*\b', r'def\s+factory\w*\b',
+
+                r'def\s+crear\w*\b', r'def\s+hacer\w*\b',
+                r'def\s+construir\w*\b', r'def\s+obtener\w*\b'
             ],
             TokenType.PRODUCT_RETURN: [
                 r'return\s+\w+\(\)', r'return\s+\w+\.\w+\(\)',
                 r'return\s+self\.\w+\(\)', r'return\s+\w+Product\b',
-                r'return\s+Concrete\w+\b'
+                r'return\s+Concrete\w+\b',
+
+                r'return\s+[A-Z]\w+\(\)',
+                r'return\s+\w+\(\s*\)',
+                r'return\s+\w+Instance\b'
             ],
             TokenType.CONDITIONAL_CREATION: [
                 r'if\s+\w+\s*==', r'elif\s+\w+\s*==', r'else\s*:',
                 r'if\s+isinstance\b', r'if\s+type\b', r'match\s+\w+',
-                r'case\s+\w+', r'switch\b'
+                r'case\s+\w+', r'switch\b',
+
+                r'if\s+tipo\s*==', r'elif\s+tipo\s*==',
+                r'if\s+\w+\s*==\s*["\']', r'elif\s+\w+\s*==\s*["\']' 
             ],
             TokenType.FACTORY_PARAMS: [
                 r'product_type\b', r'type_\w+\b', r'kind\b',
                 r'variant\b', r'category\b', r'class_type\b',
-                r'factory_type\b', r'creation_type\b'
+                r'factory_type\b', r'creation_type\b',
+
+                r'tipo\b', r'tipo_\w+\b', r'clase\b', r'categoria\b',
+                r'variante\b', r'especie\b', r'modelo\b'
             ],
             TokenType.CLASS_DEF: [r'class\s+\w+']
         }
@@ -112,12 +137,19 @@ class LexicalAnalyzer:
                 'factory_method': 0.95, 'create': 0.85, 'make': 0.80,
                 'build': 0.75, 'factory': 0.90, 'create_product': 0.95,
                 'make_object': 0.90, 'build_instance': 0.85,
-                'get_product': 0.80, 'new_instance': 0.85
+                'get_product': 0.80, 'new_instance': 0.85,
+
+                'crear': 0.85, 'crear_': 0.90, 'hacer': 0.75,
+                'construir': 0.80, 'obtener': 0.70, 'fabrica': 0.90,
+                'crear_animal': 0.95, 'crear_producto': 0.95
             },
             TokenType.FACTORY_CLASS: {
                 'Factory': 0.95, 'Creator': 0.90, 'Builder': 0.85,
                 'Maker': 0.80, 'AbstractFactory': 0.95, 'BaseCreator': 0.90,
-                'ProductFactory': 0.95, 'ObjectCreator': 0.90
+                'ProductFactory': 0.95, 'ObjectCreator': 0.90,
+
+                'Fabrica': 0.95, 'Creador': 0.90, 'Constructor': 0.85,
+                'Fabricante': 0.80, 'AnimalFactory': 0.95, 'Factory': 0.95
             },
             TokenType.CREATOR_METHOD: {
                 '@abstractmethod': 0.95, '@abc.abstractmethod': 0.95,
@@ -285,10 +317,20 @@ class SyntaxAnalyzer:
                     method_name.startswith('make_'),
                     method_name.startswith('build_'),
                     method_name.startswith('get_'),
-                    method_name == 'factory_method',
-                    method_name == 'create',
-                    method_name == 'make',
-                    method_name == 'build'
+                    method_name in ['factory_method', 'create', 'make', 'build'],
+                    
+                    # Español (NUEVO)
+                    method_name.startswith('crear_'),
+                    method_name.startswith('hacer_'),
+                    method_name.startswith('construir_'),
+                    method_name.startswith('obtener_'),
+                    method_name in ['crear', 'hacer', 'construir', 'obtener', 'fabrica'],
+                    
+                    # Patrones más generales
+                    'crear' in method_name.lower(),
+                    'create' in method_name.lower(),
+                    'factory' in method_name.lower(),
+                    'fabrica' in method_name.lower()
                 ])
                 
                 for node in ast.walk(item):
@@ -581,10 +623,12 @@ class SyntaxAnalyzer:
         # Nombres típicos de factory methods
         factory_names = [
             'create', 'make', 'build', 'factory_method', 'get_product',
-            'new_instance', 'produce'
+            'new_instance', 'produce',
+            'crear', 'hacer', 'construir', 'obtener', 'producir',
+            'instanciar', 'generar', 'fabrica'
         ]
         
-        factory_prefixes = ['create_', 'make_', 'build_', 'get_', 'new_']
+        factory_prefixes = ['create_', 'make_', 'build_', 'get_', 'new_', 'crear_', 'hacer_', 'construir_', 'obtener_', 'nuevo_']
         
         is_factory_name = (
             method_name in factory_names or
@@ -738,7 +782,12 @@ class SyntaxAnalyzer:
             # Buscar comparaciones como product_type == 'A'
             if isinstance(test_node.left, ast.Name):
                 var_name = test_node.left.id
-                factory_var_names = ['type', 'product_type', 'kind', 'variant', 'category', 'class_type']
+
+                factory_var_names = ['type', 'product_type', 'kind', 'variant', 'category',
+                                      'class_type', 'object_type', 'instance_type',
+                                      'tipo', 'tipo_producto', 'clase', 'variante', 'categoria',
+                                      'tipo_clase', 'tipo_objeto', 'especie', 'modelo']
+                
                 return var_name in factory_var_names or any(name in var_name.lower() for name in ['type', 'kind', 'variant'])
         
         elif isinstance(test_node, ast.Call):
@@ -878,7 +927,8 @@ class SemanticAnalyzer:
             if child.node_type == "method":
                 method_name = child.name.lower()
                 if any(keyword in method_name for keyword in 
-                      ['create', 'make', 'build', 'factory', 'new', 'get', 'produce']):
+                      ['create', 'make', 'build', 'factory', 'new', 'get', 'produce',
+                       'crear', 'hacer', 'generar', 'construir', 'fabricar', 'obtener', 'nuevo', 'nueva']):
                     factory_methods.append({
                         'name': child.name,
                         'decorators': child.metadata.get('decorators', []),
@@ -910,7 +960,8 @@ class SemanticAnalyzer:
             if child.node_type == "method":
                 body = str(child.metadata.get('body', ''))
                 if ('if' in body and any(keyword in body.lower() for keyword in 
-                    ['create', 'make', 'build', 'new', 'return'])):
+                    ['create', 'make', 'build', 'new', 'return', 
+                     'crear', 'hacer', 'construir', 'fabricar', 'generar', 'nuevo', 'nueva'])):
                     conditional_patterns.append({
                         'method': child.name,
                         'line': child.line,
@@ -944,7 +995,8 @@ class SemanticAnalyzer:
                 args = child.metadata.get('args', [])
                 for arg in args:
                     if any(keyword in arg.lower() for keyword in 
-                          ['type', 'kind', 'class', 'category', 'variant', 'mode']):
+                          ['type', 'kind', 'class', 'category', 'variant', 'mode'
+                           'tipo', 'clase', 'categoria', 'variante', 'modo']):
                         factory_params.append({
                             'method': child.name,
                             'param': arg,
@@ -996,7 +1048,10 @@ class SemanticAnalyzer:
         
         confidence_map = {
             'create': 0.95, 'make': 0.90, 'build': 0.85, 'factory': 0.90,
-            'new': 0.80, 'get': 0.70, 'produce': 0.85
+            'new': 0.80, 'get': 0.70, 'produce': 0.85,
+
+            'crear': 0.95, 'hacer':0.90, 'construir': 0.85, 'fabricar': 0.90, 
+            'obtener':0.70, 'nuevo':0.80, 'nueva':0.80, 'producir': 0.85
         }
         
         max_confidence = 0.0
@@ -1055,7 +1110,9 @@ class SemanticAnalyzer:
         
         confidence_map = {
             'type': 0.90, 'kind': 0.85, 'class': 0.80,
-            'category': 0.75, 'variant': 0.70, 'mode': 0.65
+            'category': 0.75, 'variant': 0.70, 'mode': 0.65,
+            'tipo':0.90, 'clase':0.80, 'categoria':0.75, 
+            'variante':0.70, 'modo':0.65
         }
         
         max_confidence = 0.0
@@ -1226,7 +1283,8 @@ class IntermediateCodeGenerator:
                 
                 # Identificar métodos factory
                 if any(keyword in method_name for keyword in 
-                      ['create', 'make', 'build', 'factory', 'new', 'get', 'produce']):
+                      ['create', 'make', 'build', 'factory', 'new', 'get', 'produce',
+                       'crear', 'hacer', 'construir', 'nuevo', 'nueva', 'conseguir', 'producir']):
                     characteristics['factory_methods'].append({
                         'name': child.name,
                         'args': child.metadata.get('args', []),
@@ -1247,7 +1305,8 @@ class IntermediateCodeGenerator:
                 args = child.metadata.get('args', [])
                 for arg in args:
                     if any(keyword in arg.lower() for keyword in 
-                          ['type', 'kind', 'class', 'category', 'variant', 'mode']):
+                          ['type', 'kind', 'class', 'category', 'variant', 'mode',
+                           'tipo', 'clase', 'categoria', 'variante', 'modo']):
                         characteristics['creation_parameters'].append(arg)
         
         # Inferir tipos de productos basado en métodos y retornos
@@ -1350,7 +1409,8 @@ class IntermediateCodeGenerator:
         """Verifica si el nombre del método sugiere que es un factory method"""
         name_lower = method_name.lower()
         return any(keyword in name_lower for keyword in 
-                  ['create', 'make', 'build', 'factory', 'new', 'get', 'produce'])
+                  ['create', 'make', 'build', 'factory', 'new', 'get', 'produce',
+                   'crear', 'hacer', 'construir', 'nuevo', 'nueva', 'conseguir', 'producir'])
     
     def _normalize_variables(self, class_node: ASTNode) -> List[Dict[str, Any]]:
         """Normaliza información de variables de la clase"""
@@ -1386,7 +1446,8 @@ class IntermediateCodeGenerator:
         """Verifica si la variable podría ser un registro de productos"""
         name_lower = var_name.lower()
         return any(keyword in name_lower for keyword in 
-                  ['registry', 'types', 'products', 'classes', 'factories', 'creators'])
+                  ['registry', 'types', 'products', 'classes', 'factories', 'creators',
+                   'registro', 'tipos', 'productos', 'clases', 'constructores', 'creadores'])
     
     def _infer_variable_type(self, value) -> str:
         """Infiere el tipo de una variable"""
@@ -1569,10 +1630,16 @@ class Optimizer:
             name = method['name'].lower()
             if name.startswith('create'):
                 prefixes.add('create')
+            elif name.startswith('crear'):
+                prefixes.add('crear')
             elif name.startswith('make'):
                 prefixes.add('make')
+            elif name.startswith('hacer'):
+                prefixes.add('hacer')
             elif name.startswith('build'):
                 prefixes.add('build')
+            elif name.startswith('construir'):
+                prefixes.add('construir')
             
             if name.endswith('factory'):
                 suffixes.add('factory')
@@ -2070,7 +2137,8 @@ class {pattern.class_name} {{
         
         formatted_methods = []
         excluded_methods = ['__str__', '__repr__', '__del__', '__hash__', '__eq__']
-        factory_methods = ['create', 'make', 'build', 'get_instance', 'factory', 'produce']
+        factory_methods = ['create', 'make', 'build', 'get_instance', 'factory', 'produce',
+                           'crear', 'hacer', 'construir', 'producir',]
         
         for method in methods:
             method_name = method.get('name', 'unknown')
@@ -2111,10 +2179,11 @@ class {pattern.class_name} {{
     def _highlight_factory_method(self, class_info: Dict[str, Any]) -> str:
         """Resalta el método factory principal"""
         methods = class_info.get('methods', [])
-        factory_methods = ['create', 'make', 'build', 'get_instance', 'factory', 'produce']
+        factory_methods = ['create', 'make', 'build', 'get_instance', 'factory', 'produce',
+                           'crear', 'hacer', 'construir', 'producir']
         
         for method in methods:
-            method_name = method.get('name', 'unknown')
+            method_name = method.get('name', 'unknown', 'nombre', 'desconocido')
             if any(fm in method_name.lower() for fm in factory_methods):
                 return f"  <<abstract>> + {method_name}(): Product"
         
@@ -2196,10 +2265,10 @@ class FactoryMethodCompiler:
     
     def compile(self, input_file: str, output_file: str) -> bool:
         """Ejecuta el proceso completo de compilación para Factory Method"""
-        print("INICIANDO COMPILACION - ANALISIS DE PATRONES FACTORY METHOD")
+        print("\nANALISIS DE PATRONES FACTORY METHOD")
         print("=" * 65)
-        print(f"Archivo de entrada: {input_file}")
-        print(f"Archivo de salida: {output_file}")
+        #print(f"Archivo de entrada: {input_file}")
+        #print(f"Archivo de salida: {output_file}")
         print(f"Fecha de análisis: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("=" * 65)
         
@@ -2213,29 +2282,23 @@ class FactoryMethodCompiler:
             print("-" * 65)
             
             # FASE 1: Análisis Léxico
-            print("EJECUTANDO FASE 1: ANÁLISIS LÉXICO...")
             tokens = self.lexer.tokenize(source_code)
             if not tokens:
                 print("WARNING: No se encontraron tokens relacionados con Factory Method")
             
             # FASE 2: Análisis Sintáctico
-            print("EJECUTANDO FASE 2: ANÁLISIS SINTÁCTICO...")
             ast_nodes, relations = self.parser.parse(source_code, tokens)
             
             # FASE 3: Análisis Semántico
-            print("EJECUTANDO FASE 3: ANÁLISIS SEMÁNTICO...")
             semantic_info = self.semantic.analyze(ast_nodes, tokens)
             
             # FASE 4: Generación de Representación Intermedia
-            print("EJECUTANDO FASE 4: GENERACIÓN DE REPRESENTACIÓN INTERMEDIA...")
             ir = self.ir_generator.generate(ast_nodes, semantic_info, relations)
             
             # FASE 5: Optimización
-            print("EJECUTANDO FASE 5: OPTIMIZACIÓN...")
             optimized_data = self.optimizer.optimize(ir)
             
             # FASE 6: Generación de Código UML
-            print("EJECUTANDO FASE 6: GENERACIÓN DE CÓDIGO UML...")
             uml_code = self.code_generator.generate_uml(optimized_data, ir)
             
             # Escribir archivo de salida
@@ -2244,13 +2307,6 @@ class FactoryMethodCompiler:
             
             # Resumen de resultados
             self._print_compilation_summary(optimized_data, output_file)
-            
-            # Intentar generar imagen PNG
-            png_generated = self._generate_png(output_file)
-            if png_generated:
-                print(f"Imagen PNG generada: {output_file.replace('.puml', '.png')}")
-            else:
-                print(f"Para generar imagen: plantuml {output_file}")
             
             print("=" * 65)
             return True
@@ -2321,44 +2377,3 @@ class FactoryMethodCompiler:
             'incomplete_factory': 'Factory Incompleto'
         }
         return display_names.get(pattern_type, pattern_type.replace('_', ' ').title())
-    
-    def _generate_png(self, puml_file: str) -> bool:
-        """Intenta generar imagen PNG del diagrama UML"""
-        try:
-            # Lista de comandos PlantUML a probar
-            plantuml_commands = [
-                'plantuml',
-                'java -jar plantuml.jar',
-                'java -jar /usr/local/bin/plantuml.jar',
-                'java -jar ./plantuml.jar',
-                '/usr/bin/plantuml',
-                '/usr/local/bin/plantuml'
-            ]
-            
-            for cmd in plantuml_commands:
-                try:
-                    print(f"Intentando generar PNG con: {cmd}")
-                    result = subprocess.run(
-                        f"{cmd} {puml_file}",
-                        shell=True,
-                        capture_output=True,
-                        text=True,
-                        timeout=30
-                    )
-                    
-                    if result.returncode == 0:
-                        print("PNG generado exitosamente")
-                        return True
-                    else:
-                        print(f"Error: {result.stderr}")
-                        
-                except (subprocess.TimeoutExpired, Exception) as e:
-                    print(f"Error con comando {cmd}: {e}")
-                    continue
-            
-            print("No se pudo generar PNG automáticamente")
-            return False
-            
-        except Exception as e:
-            print(f"Error al intentar generar PNG: {e}")
-            return False
