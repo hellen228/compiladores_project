@@ -8,10 +8,6 @@ from datetime import datetime
 from data_structure import ASTNode, ClassRelation, RelationType, IntermediateRepresentation
 from data_structure import OptimizedData, SemanticInfo
 
-# =============================================================================
-# DEFINICIÓN DE ESTRUCTURAS DE DATOS
-# =============================================================================
-
 class TokenType(Enum):
     # Tokens para Classic Observer
     OBSERVER_LIST = "observer_list"
@@ -62,74 +58,169 @@ class LexicalAnalyzer:
             TokenType.OBSERVER_LIST: [
                 r'self\._observers\b', r'self\.observers\b',
                 r'self\._listeners\b', r'self\.listeners\b',
-                r'observers\s*=\s*\[\]', r'listeners\s*=\s*\[\]'
+                r'observers\s*=\s*\[\]', r'listeners\s*=\s*\[\]',
+                r'self\._observadores\b', r'self\.observadores\b',
+
+                r'self\._oyentes\b', r'self\.oyentes\b',
+                r'self\._escuchadores\b', r'self\.escuchadores\b',
+                r'self\._testigos\b', r'self\.testigos\b',
+                r'observadores\s*=\s*\[\]', r'oyentes\s*=\s*\[\]',
+                r'escuchadores\s*=\s*\[\]', r'testigos\s*=\s*\[\]',
             ],
             TokenType.ATTACH_METHOD: [
                 r'def\s+attach\s*\(', r'def\s+add_observer\s*\(',
-                r'def\s+register\s*\(', r'def\s+add_listener\s*\('
+                r'def\s+register\s*\(', r'def\s+add_listener\s*\(',
+
+                r'def\s+agregar\s*\(', r'def\s+agregar_observador\s*\(',
+                r'def\s+anexar\s*\(', r'def\s+anexar_observador\s*\(',
+                r'def\s+registrar\s*\(', r'def\s+registrar_observador\s*\(',
+                r'def\s+suscribir\s*\(', r'def\s+suscribir_observador\s*\(',
+                r'def\s+adherir\s*\(', r'def\s+adherir_observador\s*\(',
+                r'def\s+agregar_oyente\s*\(', r'def\s+agregar_escuchador\s*\('
             ],
             TokenType.DETACH_METHOD: [
                 r'def\s+detach\s*\(', r'def\s+remove_observer\s*\(',
-                r'def\s+unregister\s*\(', r'def\s+remove_listener\s*\('
+                r'def\s+unregister\s*\(', r'def\s+remove_listener\s*\(',
+
+                r'def\s+remover\s*\(', r'def\s+remover_observador\s*\(',
+                r'def\s+eliminar\s*\(', r'def\s+eliminar_observador\s*\(',
+                r'def\s+quitar\s*\(', r'def\s+quitar_observador\s*\(',
+                r'def\s+desregistrar\s*\(', r'def\s+desregistrar_observador\s*\(',
+                r'def\s+desuscribir\s*\(', r'def\s+desuscribir_observador\s*\(',
+                r'def\s+separar\s*\(', r'def\s+separar_observador\s*\(',
+                r'def\s+remover_oyente\s*\(', r'def\s+eliminar_escuchador\s*\('
             ],
             TokenType.NOTIFY_METHOD: [
                 r'def\s+notify\s*\(', r'def\s+notify_all\s*\(',
-                r'def\s+notify_observers\s*\('
+                r'def\s+notify_observers\s*\(',
+
+                r'def\s+notificar\s*\(', r'def\s+notificar_todos\s*\(',
+                r'def\s+notificar_observadores\s*\(', r'def\s+avisar\s*\(',
+                r'def\s+avisar_todos\s*\(', r'def\s+avisar_observadores\s*\(',
+                r'def\s+informar\s*\(', r'def\s+informar_observadores\s*\(',
+                r'def\s+alertar\s*\(', r'def\s+alertar_observadores\s*\('
             ],
             TokenType.UPDATE_METHOD: [
                 r'def\s+update\s*\(', r'def\s+on_update\s*\(',
-                r'def\s+handle_update\s*\('
+                r'def\s+handle_update\s*\(',
+
+                r'def\s+actualizar\s*\(', r'def\s+al_actualizar\s*\(',
+                r'def\s+manejar_actualizacion\s*\(', r'def\s+procesar_actualizacion\s*\(',
+                r'def\s+recibir_actualizacion\s*\(', r'def\s+en_cambio\s*\(',
+                r'def\s+al_cambiar\s*\(', r'def\s+cuando_cambie\s*\('
             ],
             
             # Event-Driven Observer patterns
             TokenType.EVENT_HANDLER: [
                 r'def\s+on_\w+\s*\(', r'def\s+handle_\w+\s*\(',
-                r'event_handler', r'@event_handler'
+                r'event_handler', r'@event_handler',
+
+                r'def\s+al_\w+\s*\(', r'def\s+en_\w+\s*\(',
+                r'def\s+cuando_\w+\s*\(', r'def\s+manejar_\w+\s*\(',
+                r'def\s+procesar_\w+\s*\(', r'def\s+gestionar_\w+\s*\(',
+                r'manejador_evento', r'@manejador_evento',
+                r'gestor_evento', r'@gestor_evento'
             ],
             TokenType.EVENT_LISTENER: [
                 r'add_event_listener', r'addEventListener',
-                r'bind_event', r'on_event'
+                r'bind_event', r'on_event',
+                
+                r'agregar_oyente_evento', r'agregarOyenteEvento',
+                r'vincular_evento', r'enlazar_evento',
+                r'al_evento', r'en_evento',
+                r'escuchar_evento', r'observar_evento'
             ],
             TokenType.CALLBACK_REF: [
                 r'callback\s*=', r'self\.callback\b',
-                r'handler\s*=', r'self\.handler\b'
+                r'handler\s*=', r'self\.handler\b',
+                r'callback\s*=', r'self\.callback\b',
+                
+                r'devolucion\s*=', r'self\.devolucion\b',
+                r'retrollamada\s*=', r'self\.retrollamada\b',
+                r'manejador\s*=', r'self\.manejador\b',
+                r'gestor\s*=', r'self\.gestor\b'
             ],
             TokenType.ON_METHOD: [
                 r'def\s+on\s*\(', r'\.on\s*\(',
-                r'def\s+bind\s*\('
+                r'def\s+bind\s*\(',
+
+                r'def\s+al\s*\(', r'\.al\s*\(',
+                r'def\s+en\s*\(', r'\.en\s*\(',
+                r'def\s+cuando\s*\(', r'\.cuando\s*\(',
+                r'def\s+vincular\s*\(', r'\.vincular\s*\(',
+                r'def\s+enlazar\s*\(', r'\.enlazar\s*\('
             ],
             TokenType.EMIT_METHOD: [
                 r'def\s+emit\s*\(', r'\.emit\s*\(',
-                r'def\s+trigger\s*\(', r'\.trigger\s*\('
+                r'def\s+trigger\s*\(', r'\.trigger\s*\(',
+
+                r'def\s+emitir\s*\(', r'\.emitir\s*\(',
+                r'def\s+disparar\s*\(', r'\.disparar\s*\(',
+                r'def\s+lanzar\s*\(', r'\.lanzar\s*\(',
+                r'def\s+activar\s*\(', r'\.activar\s*\(',
+                r'def\s+ejecutar\s*\(', r'\.ejecutar\s*\('
             ],
             
             # Publisher-Subscriber patterns
             TokenType.SUBSCRIBE_METHOD: [
                 r'def\s+subscribe\s*\(', r'\.subscribe\s*\(',
-                r'def\s+sub\s*\('
+                r'def\s+sub\s*\(',
+
+                r'def\s+suscribir\s*\(', r'\.suscribir\s*\(',
+                r'def\s+suscribirse\s*\(', r'\.suscribirse\s*\(',
+                r'def\s+abonarse\s*\(', r'\.abonarse\s*\(',
+                r'def\s+registrarse\s*\(', r'\.registrarse\s*\('
             ],
             TokenType.UNSUBSCRIBE_METHOD: [
                 r'def\s+unsubscribe\s*\(', r'\.unsubscribe\s*\(',
-                r'def\s+unsub\s*\('
+                r'def\s+unsub\s*\(',
+
+                r'def\s+desuscribir\s*\(', r'\.desuscribir\s*\(',
+                r'def\s+desuscribirse\s*\(', r'\.desuscribirse\s*\(',
+                r'def\s+desabonarse\s*\(', r'\.desabonarse\s*\(',
+                r'def\s+cancelar_suscripcion\s*\(', r'\.cancelar_suscripcion\s*\('
             ],
             TokenType.PUBLISH_METHOD: [
                 r'def\s+publish\s*\(', r'\.publish\s*\(',
-                r'def\s+pub\s*\('
+                r'def\s+pub\s*\(',
+
+                r'def\s+publicar\s*\(', r'\.publicar\s*\(',
+                r'def\s+difundir\s*\(', r'\.difundir\s*\(',
+                r'def\s+transmitir\s*\(', r'\.transmitir\s*\(',
+                r'def\s+enviar\s*\(', r'\.enviar\s*\('
             ],
             TokenType.TOPIC_REF: [
                 r'topic\s*=', r'self\.topic\b',
-                r'topics\s*=', r'self\.topics\b'
+                r'topics\s*=', r'self\.topics\b',
+                
+                r'tema\s*=', r'self\.tema\b',
+                r'temas\s*=', r'self\.temas\b',
+                r'topico\s*=', r'self\.topico\b',
+                r'topicos\s*=', r'self\.topicos\b',
+                r'asunto\s*=', r'self\.asunto\b',
+                r'asuntos\s*=', r'self\.asuntos\b',
             ],
             TokenType.CHANNEL_REF: [
                 r'channel\s*=', r'self\.channel\b',
-                r'channels\s*=', r'self\.channels\b'
+                r'channels\s*=', r'self\.channels\b',
+
+                r'canal\s*=', r'self\.canal\b',
+                r'canales\s*=', r'self\.canales\b',
+                r'conducto\s*=', r'self\.conducto\b',
+                r'conductos\s*=', r'self\.conductos\b'
             ],
             
             # General patterns
             TokenType.LOOP_NOTIFY: [
                 r'for\s+\w+\s+in\s+.*observers',
                 r'for\s+\w+\s+in\s+.*listeners',
-                r'for\s+\w+\s+in\s+.*subscribers'
+                r'for\s+\w+\s+in\s+.*subscribers',
+                
+                r'for\s+\w+\s+in\s+.*observadores',
+                r'for\s+\w+\s+in\s+.*oyentes',
+                r'for\s+\w+\s+in\s+.*escuchadores',
+                r'for\s+\w+\s+in\s+.*suscriptores',
+                r'for\s+\w+\s+in\s+.*testigos',
             ],
             TokenType.CLASS_DEF: [r'class\s+\w+']
         }
@@ -162,35 +253,57 @@ class LexicalAnalyzer:
         confidence_table = {
             # Classic Observer
             TokenType.OBSERVER_LIST: {
-                '_observers': 0.95, 'observers': 0.90, '_listeners': 0.85, 'listeners': 0.80
+                '_observers': 0.95, 'observers': 0.90, '_listeners': 0.85, 'listeners': 0.80,
+                '_observadores': 0.95, 'observadores': 0.90,'_oyentes': 0.85, 'oyentes': 0.80,
+                '_escuchadores': 0.85, 'escuchadores': 0.80,'_testigos': 0.85, 'testigos': 0.80
             },
             TokenType.ATTACH_METHOD: {
-                'attach': 0.95, 'add_observer': 0.90, 'register': 0.75, 'add_listener': 0.85
+                'attach': 0.95, 'add_observer': 0.90, 'register': 0.75, 'add_listener': 0.85,
+                'agregar': 0.90, 'agregar_observador': 0.95,'anexar': 0.85, 'anexar_observador': 0.90,
+                'registrar': 0.75, 'registrar_observador': 0.90,'suscribir': 0.85, 'suscribir_observador': 0.90,
+                'adherir': 0.80, 'adherir_observador': 0.85,'agregar_oyente': 0.85, 'agregar_escuchador': 0.85
             },
             TokenType.DETACH_METHOD: {
-                'detach': 0.95, 'remove_observer': 0.90, 'unregister': 0.75, 'remove_listener': 0.85
+                'detach': 0.95, 'remove_observer': 0.90, 'unregister': 0.75, 'remove_listener': 0.85,
+                'remover': 0.85, 'remover_observador': 0.95,'eliminar': 0.80, 'eliminar_observador': 0.90,
+                'quitar': 0.85, 'quitar_observador': 0.90,'desregistrar': 0.80, 'desregistrar_observador': 0.85,
+                'desuscribir': 0.85, 'desuscribir_observador': 0.90,'separar': 0.80, 'separar_observador': 0.85,
+                'remover_oyente': 0.85, 'eliminar_escuchador': 0.85,
             },
             TokenType.NOTIFY_METHOD: {
-                'notify': 0.95, 'notify_all': 0.90, 'notify_observers': 0.95
+                'notify': 0.95, 'notify_all': 0.90, 'notify_observers': 0.95,
+                'notificar': 0.95, 'notificar_todos': 0.90, 'notificar_observadores': 0.95,
+                'avisar': 0.90, 'avisar_todos': 0.85, 'avisar_observadores': 0.90,'informar': 0.85, 
+                'informar_observadores': 0.90,'alertar': 0.85, 'alertar_observadores': 0.90,
             },
             TokenType.UPDATE_METHOD: {
-                'update': 0.85, 'on_update': 0.90, 'handle_update': 0.85
+                'update': 0.85, 'on_update': 0.90, 'handle_update': 0.85,
+                'actualizar': 0.85, 'al_actualizar': 0.90, 'manejar_actualizacion': 0.85,
+                'procesar_actualizacion': 0.85, 'recibir_actualizacion': 0.85,
+                'en_cambio': 0.80, 'al_cambiar': 0.80, 'cuando_cambie': 0.80,
             },
             
             # Event-Driven Observer
             TokenType.EVENT_HANDLER: {
-                'on_': 0.80, 'handle_': 0.85, 'event_handler': 0.95
+                'on_': 0.80, 'handle_': 0.85, 'event_handler': 0.95,
+                'al_': 0.80, 'en_': 0.75, 'cuando_': 0.80,
+                'manejar_': 0.85, 'procesar_': 0.80, 'gestionar_': 0.85,
+                'manejador_evento': 0.95, 'gestor_evento': 0.90
             },
             TokenType.EMIT_METHOD: {
-                'emit': 0.95, 'trigger': 0.90
+                'emit': 0.95, 'trigger': 0.90,
+                'emitir': 0.95, 'disparar': 0.90, 'lanzar': 0.85,
+                'activar': 0.80, 'ejecutar': 0.75
             },
             
             # Publisher-Subscriber
             TokenType.SUBSCRIBE_METHOD: {
-                'subscribe': 0.95, 'sub': 0.85
+                'subscribe': 0.95, 'sub': 0.85,
+                'suscribir': 0.95, 'suscribirse': 0.90,'abonarse': 0.85, 'registrarse': 0.80
             },
             TokenType.PUBLISH_METHOD: {
-                'publish': 0.95, 'pub': 0.85
+                'publish': 0.95, 'pub': 0.85, 
+                'publicar': 0.95, 'difundir': 0.85, 'transmitir': 0.80, 'enviar': 0.75
             }
         }
         
@@ -447,7 +560,8 @@ class SyntaxAnalyzer:
                                 target.value.id == 'self'):
                                 attr_name = target.attr
                                 if any(keyword in attr_name.lower() for keyword in 
-                                      ['observer', 'listener', 'watcher']):
+                                      ['observer', 'listener', 'watcher',
+                                       'observador', 'observadora', 'oyente']):
                                     observer_attrs.append(attr_name)
         
         return observer_attrs
@@ -465,7 +579,8 @@ class SyntaxAnalyzer:
                                 target.value.id == 'self'):
                                 attr_name = target.attr
                                 if any(keyword in attr_name.lower() for keyword in 
-                                      ['event', 'callback', 'handler']):
+                                      ['event', 'callback', 'handler',
+                                       'evento', 'controlador']):
                                     event_attrs.append(attr_name)
         
         return event_attrs
@@ -483,7 +598,8 @@ class SyntaxAnalyzer:
                                 target.value.id == 'self'):
                                 attr_name = target.attr
                                 if any(keyword in attr_name.lower() for keyword in 
-                                      ['topic', 'channel', 'subscriber', 'subscription']):
+                                      ['topic', 'channel', 'subscriber', 'subscription',
+                                       'tema', 'canal', 'suscriptor', 'suscripcion']):
                                     pubsub_attrs.append(attr_name)
         
         return pubsub_attrs
@@ -539,7 +655,8 @@ class SyntaxAnalyzer:
             if isinstance(node, ast.For):
                 if isinstance(node.target, ast.Name) and isinstance(node.iter, ast.Attribute):
                     if any(keyword in str(node.iter.attr).lower() for keyword in 
-                          ['observer', 'listener', 'subscriber']):
+                          ['observer', 'listener', 'subscriber',
+                           'observador', 'oyente', 'suscriptor']):
                         return True
         return False
     
@@ -616,7 +733,8 @@ class SemanticAnalyzer:
         for comp in compositions:
             target_class = comp['target_class']
             if any(keyword in target_class.lower() for keyword in 
-                  ['agency', 'station', 'subject', 'observable', 'event', 'broker']):
+                  ['agency', 'station', 'subject', 'observable', 'event', 'broker',
+                   'agencia', 'estacion', 'sujeto', 'observable', 'evento', 'corredor']):
                 observer_compositions.append(comp)
         
         if observer_compositions:
@@ -644,7 +762,8 @@ class SemanticAnalyzer:
         methods = class_node.metadata.get('methods', [])
         
         attach_methods = [m for m in methods if any(keyword in m.lower() for keyword in 
-                         ['attach', 'add_observer', 'register', 'add_listener'])]
+                         ['attach', 'add_observer', 'register', 'add_listener',
+                          'adjuntar','añadir_observador', 'registrar', 'añadir_oyente'])]
         if attach_methods:
             evidences['has_attach_method'] = {
                 'found': True,
@@ -653,7 +772,8 @@ class SemanticAnalyzer:
             }
         
         detach_methods = [m for m in methods if any(keyword in m.lower() for keyword in 
-                         ['detach', 'remove_observer', 'unregister', 'remove_listener'])]
+                         ['detach', 'remove_observer', 'unregister', 'remove_listener',
+                          'separar', 'eliminar_observador', 'cancelar_registro', 'escucha_remoto'])]
         if detach_methods:
             evidences['has_detach_method'] = {
                 'found': True,
@@ -662,7 +782,8 @@ class SemanticAnalyzer:
             }
         
         notify_methods = [m for m in methods if any(keyword in m.lower() for keyword in 
-                         ['notify', 'notify_all', 'notify_observers'])]
+                         ['notify', 'notify_all', 'notify_observers',
+                          'notificar', 'notificar_a_todos', 'notificar_observadores'])]
         if notify_methods:
             evidences['has_notify_method'] = {
                 'found': True,
@@ -672,7 +793,8 @@ class SemanticAnalyzer:
         
         # Update method (para Observer)
         update_methods = [m for m in methods if any(keyword in m.lower() for keyword in 
-                         ['update', 'on_update', 'handle_update'])]
+                         ['update', 'on_update', 'handle_update',
+                          'actualizar', 'manejar_actualizacion'])]
         if update_methods:
             evidences['has_update_method'] = {
                 'found': True,
@@ -718,7 +840,8 @@ class SemanticAnalyzer:
         
         # Métodos emit/trigger
         emit_methods = [m for m in methods if any(keyword in m.lower() for keyword in 
-                       ['emit', 'trigger', 'fire_event'])]
+                       ['emit', 'trigger', 'fire_event',
+                        'emitir', 'disparador'])]
         if emit_methods:
             evidences['has_emit_methods'] = {
                 'found': True,
